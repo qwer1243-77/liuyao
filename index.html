@@ -527,7 +527,7 @@ function run(){
         const rr=pickYongShen(L, x.qin, p.shi);
         const isPick = rr.pick && rr.pick.i===x.i;
         const tag = isPick ? '　★ 首选' : '　备选';
-        return '<option value="'+x.i+'">'+(isPick?'★ ':'')+POS[x.i]+'爻　'+x.qin+'　'+x.zhi+x.wx+(x.moving?'（动）':'')+tag+'</option>';
+        return '<option value="'+x.i+'">'+POS[x.i]+'爻　'+x.qin+'　'+x.zhi+x.wx+(x.moving?'（动）':'')+tag+'</option>';
       }).join('')
     }</select>
     <div id="yqout"></div>

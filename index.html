@@ -88,6 +88,9 @@
     background:#fff;border-radius:9px;font-family:inherit;color:var(--sub);cursor:pointer;}
   .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
   .verdict{font-size:22px;font-weight:700;text-align:center;margin:4px 0 10px;letter-spacing:2px;}
+  .report h3{font-size:13.5px;margin:14px 0 6px;padding:5px 0 5px 9px;border-left:3px solid var(--ink);background:#f4f6f9;}
+  .report p{font-size:13px;margin:6px 0;line-height:1.62;}
+  .rbanner{background:#fff8e6;border:1px solid #e6cf9a;border-radius:9px;padding:9px 11px;font-size:12.5px;color:#6b4e12;margin-bottom:6px;}
   .jl{font-size:12.5px;margin:4px 0;padding-left:14px;text-indent:-14px;line-height:1.45;}
   .jl.g{color:var(--green);} .jl.k{color:var(--red);} .jl.n{color:var(--sub);}
   details{border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:8px;background:#fcfdfe;}
@@ -216,7 +219,21 @@ const LIUCHONG={子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:
 const LIUSHEN=['青龙','朱雀','勾陈','螣蛇','白虎','玄武'];
 const SHEN_START={'甲':0,'乙':0,'丙':1,'丁':1,'戊':2,'己':3,'庚':4,'辛':4,'壬':5,'癸':5};
 
-const QIN_ASK={妻财:'钱、薪水、买卖',官鬼:'工作、官司、女问婚',父母:'学业、文书、房子、长辈',子孙:'子女、健康、宠物',兄弟:'合伙、竞争、借贷'};
+const QIN_DESC={
+ 妻财:'钱财、薪水、实物，也代表我所享用、支配的东西',
+ 官鬼:'工作、职位、名分，也主压力、忧虑、官司',
+ 父母:'学业、知识、文书、房子、长辈',
+ 子孙:'子女、健康、医药、宠物、解忧',
+ 兄弟:'同辈、朋友、竞争者，也主分散、破耗'
+};
+const REL_DESC={
+ 回头生:'变爻回头生原爻，加分',
+ 回头克:'变爻回头克原爻，减分',
+ 化泄:'原爻去生变爻，泄气耗力',
+ 化耗:'原爻去克变爻，克出耗力',
+ 比和:'同五行，力量叠加'
+};
+const POSN=['初','二','三','四','五','上'];const QIN_ASK={妻财:'钱、薪水、买卖',官鬼:'工作、官司、女问婚',父母:'学业、文书、房子、长辈',子孙:'子女、健康、宠物',兄弟:'合伙、竞争、借贷'};
 const QIN_ASK_MAP_FOR_UI=1;const TOPICS=[
  {k:'',   t:'（不指定）', q:''},
  {k:'财', t:'求财、薪水、买卖、男问婚', q:'妻财'},
@@ -509,10 +526,7 @@ function run(){
       L.slice().reverse().map(x=>{
         const rr=pickYongShen(L, x.qin, p.shi);
         const isPick = rr.pick && rr.pick.i===x.i;
-        let tag;
-        if(isPick){ tag='　问'+QIN_ASK[x.qin]+'选它（'+rr.why+'）'; }
-        else if(rr.pick){ tag='　— 也属'+x.qin+'，两现时规则取'+POS[rr.pick.i]+'爻'; }
-        else { tag='　— 也属'+x.qin; }
+        const tag = isPick ? '　★ 首选' : '　备选';
         return '<option value="'+x.i+'">'+(isPick?'★ ':'')+POS[x.i]+'爻　'+x.qin+'　'+x.zhi+x.wx+(x.moving?'（动）':'')+tag+'</option>';
       }).join('')
     }</select>
@@ -533,15 +547,19 @@ function run(){
     saveHistory({t:Date.now(), q:q, casts:casts.slice(0,6), ben:benName, bian:bianName, moving:hasMoving,
       date:(Y+'-'+String(M).padStart(2,'0')+'-'+String(D).padStart(2,'0')), mZhi:mZhi, dgz:(dGan+dZhi)});
   }
-  // 参考断语
+  // 参考断语（完整推导）
   if(ask && ask!=='世应'){
-    const j=judgeOf(L,p,ask);
-    html+='<div class="card"><h2>参考断语<small>按公开规则机械得出</small></h2>'
-      +'<div class="verdict">'+j.level+'</div>'
-      +'<div>'+j.lines.map(x=>'<div class="jl '+x[0]+'">'+(x[0]==='g'?'＋':(x[0]==='k'?'－':'·'))+' '+x[1]+'</div>').join('')+'</div>'
-      +'<p class="note">有利项 '+j.good+' 个，不利项 '+j.bad+' 个（差 ≥2 判偏吉，≤ −2 判偏凶，其余中性）。'
-      +'<b>这套打分是本工具自定义的，不是古法</b>——古书只给倾向、不给权重。<b>仅供参考，判断权在你。</b></p>'
+    html+='<div class="card report"><h2>参考断语<small>四步推导 · 仅供参考</small></h2>'
+      +'<div class="rbanner">下面按六爻通行规则一步步推。规则与顺序都摊开，你可以逐条验算。<b>但"偏吉／偏凶"的权重是本工具自定义的，不是古法</b>——请当参考，不要当结论。</div>'
+      + buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName)
       +'<p class="note">换一套优先级，结论就会变。这正是"加权判断"无法自动化的原因。</p></div>';
+  } else if(ask==='世应'){
+    html+='<div class="card report"><h2>参考断语<small>感情／关系类</small></h2>'
+      +'<div class="rbanner">这类问题不套六亲，直接看世应，不产生"偏好／偏坏"的数值判断。</div>'
+      + buildReport(L,p,'父母',mZhi,mWx,dZhi,benName,bianName).replace(/<h3>第一步[\s\S]*?<\/h3>/,'').replace(/<h3>第二步[\s\S]*?<h3>世应<\/h3>/,'<h3>世应</h3>')
+      +'</div>';
+  } else {
+    html+='<div class="card"><h2>参考断语</h2><p class="note">在上面「你要问什么」里选一项，这里会给出<b>第一步定用神 → 第二步看旺衰 → 第三步看生克 → 第四步看变卦 → 世应 → 综合断语 → 建议</b>的完整推导。</p></div>';
   }
 
   // 知识库
@@ -644,6 +662,124 @@ function relReason(rel,wx,bwx){
   return '';
 }
 
+/* ============ 完整推导报告 ============ */
+function buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName){
+  const r=pickYongShen(L,ask,p.shi);
+  const y=r.pick;
+  const R={旺:5,相:4,休:3,囚:2,死:1};
+  const o=[]; const sec=t=>o.push('<h3>'+t+'</h3>'); const P=t=>o.push('<p>'+t+'</p>');
+  if(!y){ P('本卦没有「'+ask+'」，用神不上卦，属伏神范畴，无法按常规推导。'); return o.join(''); }
+
+  const cands=L.filter(x=>x.qin===ask);
+
+  // 一、定用神
+  sec('第一步：定用神');
+  P('问「'+ask+'」，用神取 <b>'+ask+'</b>（'+QIN_DESC[ask]+'）。');
+  P('本卦 '+ask+' '+(cands.length>1?'<b>两现</b>':'只出现一次')+'：'+cands.map(x=>POSN[x.i]+'爻 '+x.zhi+x.wx+(x.moving?'（动）':'')+(x.sy?'（'+x.sy+'）':'')).join('、')+'。');
+  P('按规则，'+r.why+' &rarr; <b>'+POSN[y.i]+'爻 '+y.zhi+y.wx+'</b>。');
+  cands.filter(x=>x.i!==y.i).forEach(x=>{
+    let n='另一爻 '+POSN[x.i]+'爻 '+x.zhi+x.wx+' 安静';
+    if(x.sy==='应') n+='，且是应爻，可当「外部条件」兼看';
+    else if(R[x.ws]>=4) n+='，本身不弱，可作参照';
+    P(n+'。');
+  });
+
+  // 二、旺衰
+  sec('第二步：看旺衰');
+  let rel = y.wx===mWx?'与月建同气':(SHENG[mWx]===y.wx?'月建生它':(SHENG[y.wx]===mWx?'它生月建，泄气':(KE[y.wx]===mWx?'它克月建':(KE[mWx]===y.wx?'月建克它':''))));
+  P('月建 <b>'+mZhi+'（'+mWx+'）</b>，'+rel+' &rarr; 「<b>'+y.ws+'</b>」');
+  let dn;
+  if(dZhi===y.zhi) dn='用神临日辰 &rarr; 力量再加，是它最强的时候';
+  else if(LIUCHONG[dZhi]===y.zhi) dn='日辰冲用神 &rarr; 主冲动、易破散';
+  else if(LIUHE[dZhi]===y.zhi) dn='日辰合用神 &rarr; 主牵绊、事缓';
+  else dn='日辰不直接作用于用神';
+  P('日辰 <b>'+dZhi+'</b>，'+dn+'。');
+  const strong=R[y.ws]>=4;
+  P('结论：用神<b>'+(strong?'有力':'力弱')+'</b>'+(dZhi===y.zhi?'，且临日辰':'')+'。');
+
+  // 三、生克
+  sec('第三步：看生克');
+  const yuan=L.filter(x=>SHENG[x.wx]===y.wx);
+  const ji=L.filter(x=>KE[x.wx]===y.wx);
+  P('<b>生它的（原神）</b>：'+(yuan.length?'':'不上卦——无援手。'));
+  yuan.forEach(x=>{
+    let t='· '+POSN[x.i]+'爻 '+x.qin+' '+x.zhi+x.wx+'：'+(x.moving?'动':'静')+'，'+x.ws;
+    if(x.moving&&x.rel) t+='；动化'+x.bZhi+x.bWx+'，'+REL_DESC[x.rel];
+    P(t+'。');
+  });
+  P('<b>克它的（忌神）</b>：'+(ji.length?'':'不上卦——无阻力。'));
+  ji.forEach(x=>{
+    let t='· '+POSN[x.i]+'爻 '+x.qin+' '+x.zhi+x.wx+'：'+(x.moving?'动':'静')+'，'+x.ws;
+    if(x.moving&&x.rel) t+='；动化'+x.bZhi+x.bWx+'，'+REL_DESC[x.rel];
+    P(t+'。');
+  });
+  const ym=yuan.filter(x=>x.moving).length, jm=ji.filter(x=>x.moving).length;
+  let s='小结：'+(yuan.length?(ym?'原神发动，来生有力':'原神在位但安静，助而不显'):'无原神，孤军无援');
+  s+='；'+(ji.length?(jm?'忌神发动，阻力明显':'忌神安静，阻力不大'):'无忌神，无阻');
+  P(s+'。');
+
+  // 四、变卦
+  sec('第四步：看变卦');
+  if(y.moving){
+    P('用神动，翻转后化出 <b>'+y.bZhi+y.bWx+'</b>（'+y.bQin+'）：'+REL_DESC[y.rel]+'。');
+    if(y.rel==='回头克') P('这是全卦最关键的一笔——用神被自己变出来的东西克住，主事情反复、做到一半被自己打回来。');
+    else if(y.rel==='回头生') P('变爻回头生用神，主后劲转强、有人补位。');
+    else if(y.rel==='化泄') P('用神去生变爻，力气往外漏——不是被打断，是自己漏气。');
+    else if(y.rel==='化耗') P('用神去克变爻，克出耗力——越用力越亏。');
+  } else {
+    P('用神安静不动，没有变爻，事情暂不转向，以本卦为主。');
+  }
+  P('本卦 <b>'+benName+'</b> 是现状，变卦 <b>'+bianName+'</b> 是去向。');
+
+  // 世应
+  sec('世应');
+  const shi=L[p.shi-1], ying=L[(p.shi>3?p.shi-3:p.shi+3)-1];
+  P('世爻 <b>'+POSN[shi.i]+'爻 '+shi.qin+' '+shi.zhi+shi.wx+'</b>（'+shi.ws+'，'+shi.shen+'）——你自己。');
+  P('应爻 <b>'+POSN[ying.i]+'爻 '+ying.qin+' '+ying.zhi+ying.wx+'</b>（'+ying.ws+'）——对方／外部环境。');
+  let sr;
+  if(shi.wx===ying.wx) sr='同五行，比和';
+  else if(SHENG[shi.wx]===ying.wx) sr='世生应——你在付出、主动';
+  else if(SHENG[ying.wx]===shi.wx) sr='应生世——对方助你';
+  else if(KE[shi.wx]===ying.wx) sr='世克应——你想掌控';
+  else sr='应克世——受对方压制';
+  P('世应关系：<b>'+sr+'</b>。');
+  if(shi.qin===ask) P('世爻本身就是用神——成败系于你自己。');
+  else if(SHENG[shi.wx]===y.wx) P('世生用神——你在为这件事付出。');
+  else if(KE[shi.wx]===y.wx) P('世克用神——你想抓住它；世'+shi.ws+'、用神'+y.ws+'，'+(R[shi.ws]<R[y.ws]?'抓起来吃力':'抓得住')+'。');
+
+  // 综合
+  sec('综合断语');
+  let g=0,b=0;
+  if(strong) g++; else b++;
+  if(y.rel==='回头生') g++; if(y.rel==='回头克'||y.rel==='化泄'||y.rel==='化耗') b++;
+  if(y.kong) b++;
+  if(ym) g++; else if(yuan.length===0) b++;
+  if(jm) b++; else if(ji.length===0) g++;
+  const d=g-b;
+  const lvl = d>=2?'偏吉':(d<=-2?'偏凶':'中性、需观察');
+  P('倾向：<b>'+lvl+'</b>（有利 '+g+' 项，不利 '+b+' 项；差 ≥2 判偏吉，≤ −2 判偏凶，其余中性）。');
+  const pts=[];
+  pts.push(strong?'学问也好、事情本身也好，底子是有的':'底子偏弱，条件还没到位');
+  if(y.rel==='回头克') pts.push('最大的问题是「回撤」——不是做不成，是做到一半被自己拉回来');
+  if(y.rel==='化泄') pts.push('力气容易外漏：做的时候很投入，做完留不下东西');
+  if(y.rel==='化耗') pts.push('方向对但费力，越使劲越亏');
+  if(!yuan.length) pts.push('没有外力来帮，只能靠自己攒');
+  if(jm) pts.push('阻力是"动"的，会主动找上来，躲不掉');
+  if(!ji.length) pts.push('没有明显的对手或阻碍，主要是自己的问题');
+  pts.forEach(t=>P('· '+t+'。'));
+
+  // 建议
+  sec('可以怎么做');
+  const tips=[];
+  if(!strong || y.rel==='化泄' || y.rel==='化耗') tips.push('减小单次强度、拉长时间——一次做小，天天做');
+  if(y.rel==='回头克') tips.push('给「回撤」设防：做完立刻留痕（笔记、复述、马上用一次），别指望下次还记得');
+  if(jm) tips.push('先处理阻力源，而不是加力硬顶');
+  if(R[ying.ws]>=4 && R[shi.ws]<4) tips.push('借外部力量：资料、环境、懂的人——比自己硬撑有效');
+  if(strong && ym) tips.push('趁势推进，这段时间是效率最高的时候');
+  if(!tips.length) tips.push('按既定节奏做，不急于求成');
+  tips.slice(0,3).forEach(t=>P('· '+t+'。'));
+  return o.join('');
+}
 /* ============ 参考断语（规则化，非古法，仅供参照） ============ */
 function judgeOf(L, p, ask){
   const r=pickYongShen(L, ask, p.shi);

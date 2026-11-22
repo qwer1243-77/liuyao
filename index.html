@@ -126,7 +126,7 @@
 
 <div class="card noprint">
   <h2>① 所问之事与时间</h2>
-  <label>所问之事（写具体，带时限）</label>
+  <label>所问之事（写具体、带时限；工具会读这句话，自动判断用神）</label>
   <input type="text" id="question" placeholder="例：这个月学六爻的结果如何">
   <div class="row">
     <div>
@@ -1074,15 +1074,58 @@ function renderYingqi(idx){
   fillSelects();
   document.getElementById('run').addEventListener('click',run);
   const askSel=document.getElementById('ask');
+  const qInput=document.getElementById('question');
   const ASKMAP={妻财:'钱财、薪水、买卖',官鬼:'工作、名分、官司',父母:'学业、文书、房子、长辈',子孙:'子女、健康、解忧',兄弟:'合伙、竞争、借贷'};
-  function updAskHint(){
+
+  const ASK_KW={
+   妻财:['钱','财','薪','工资','奖金','收入','赚','买卖','生意','投资','回款','欠款','分红','报价','月薪','薪资','提成','利润','收益','挣'],
+   官鬼:['工作','职位','升职','升迁','面试','官司','诉讼','老板','上司','跳槽','求职','仕途','岗位','离职','开除','录用','编制','考编','面试官'],
+   父母:['学','考','证','文书','合同','房','车','论文','长辈','父母','爷爷','奶奶','教材','课程','录取','通知','消息','快递','背书','证书','读书','知识'],
+   子孙:['孩子','儿女','健康','病','身体','宠物','猫','狗','怀孕','生育','药','康','忧','烦','开解','心情','焦虑'],
+   兄弟:['合伙','朋友','同辈','竞争','借钱','还钱','兄','弟','姐','妹','合作','分钱','瓜分','同事'],
+   世应:['感情','恋爱','婚姻','男朋友','女朋友','老公','老婆','交往','复合','分手','喜欢','对象','暗恋','表白']
+  };
+  function inferQin(text){
+    let best=null, bestHits=[];
+    for(const k in ASK_KW){
+      const hits=ASK_KW[k].filter(function(w){ return text.indexOf(w)>=0; });
+      if(hits.length>bestHits.length){ best=k; bestHits=hits; }
+    }
+    return best ? {qin:best, hits:bestHits} : null;
+  }
+
+  function updAskHint(msg){
     const v=askSel.value, el=document.getElementById('askhint');
     if(!el) return;
+    if(msg){ el.innerHTML=msg; return; }
     el.innerHTML = !v ? '' : (v==='世应'
       ? '你选的是「感情／关系」&rarr; 不套六亲，直接看世应：世是你，应是对方。'
-      : '你选的是「'+ASKMAP[v]+'」&rarr; <b>用神将取 '+v+'</b>。排盘后会自动找出这一爻，并写明为什么取它。');
+      : '你选的是「'+ASKMAP[v]+'」&rarr; <b>用神将取 '+v+'</b>。排盘后会找出这一爻，并写明为什么取它。');
   }
-  askSel.addEventListener('change',updAskHint); updAskHint();
+
+  // 读「所问之事」，自动判断用神
+  function autoFromQuestion(){
+    const q=(qInput.value||'').trim();
+    const el=document.getElementById('askhint');
+    if(!q){ el.innerHTML=''; return; }
+    const inf=inferQin(q);
+    if(inf){
+      askSel.value=inf.qin;
+      const tips = (inf.qin==='世应')
+        ? '判断你在问「感情／关系」，这类不套六亲，直接看世应。'
+        : '判断你在问 <b>'+inf.qin+'</b> 这一类，用神将取 <b>'+inf.qin+'</b>。';
+      el.innerHTML='从你写的问题里认出关键词「<b>'+inf.hits.slice(0,4).join('、')+'</b>」&rarr; '+tips
+        +'<br>判断不对的话，手动改下面的选项即可。';
+    } else {
+      askSel.value='';
+      el.innerHTML='没从这句话里认出明确的关键词（钱／工作／学业／健康／合伙／感情），请手动选下面的选项。';
+    }
+  }
+
+  qInput.addEventListener('input',autoFromQuestion);
+  qInput.addEventListener('change',autoFromQuestion);
+  askSel.addEventListener('change',function(){ updAskHint(); });
+  updAskHint();
 })();
 </script>
 </div>

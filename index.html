@@ -504,8 +504,17 @@ function run(){
 
   // 应期候选
   html+=`<div class="card noprint"><h2>应期候选<small>先选一条爻作为用神</small></h2>
+    <p class="note" style="margin:2px 0 8px">列出来的是<b>全部六爻</b>，每爻都注明了它对应的六亲。<b>★ 是规则首选的用神</b>；同一个六亲出现两次（两现）时，规则按「取动 → 取临世应 → 取旺 → 取近世」挑一个，另一个标为备选。</p>
     <select id="yqsel"><option value="">（选择用神爻）</option>${
-      L.slice().reverse().map(x=>`<option value="${x.i}">${POS[x.i]}爻　${x.qin}　${x.zhi}${x.wx}${x.moving?'（动）':''}　—　问${QIN_ASK[x.qin]}选它</option>`).join('')
+      L.slice().reverse().map(x=>{
+        const rr=pickYongShen(L, x.qin, p.shi);
+        const isPick = rr.pick && rr.pick.i===x.i;
+        let tag;
+        if(isPick){ tag='　问'+QIN_ASK[x.qin]+'选它（'+rr.why+'）'; }
+        else if(rr.pick){ tag='　— 也属'+x.qin+'，两现时规则取'+POS[rr.pick.i]+'爻'; }
+        else { tag='　— 也属'+x.qin; }
+        return '<option value="'+x.i+'">'+(isPick?'★ ':'')+POS[x.i]+'爻　'+x.qin+'　'+x.zhi+x.wx+(x.moving?'（动）':'')+tag+'</option>';
+      }).join('')
     }</select>
     <div id="yqout"></div>
     <p class="note">排序规则公开如下：值日 3 分、六合 2、原神值日 2、动爻值日 2、变爻值日 2、忌神受冲 2、冲空 2、填实 3、相冲 1。

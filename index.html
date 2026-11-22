@@ -548,15 +548,22 @@ function run(){
       date:(Y+'-'+String(M).padStart(2,'0')+'-'+String(D).padStart(2,'0')), mZhi:mZhi, dgz:(dGan+dZhi)});
   }
   // 参考断语（完整推导）
+  function safeReport(qin){
+    try{ return buildReport(L,p,qin,mZhi,monthWx,dZhi,benName,bianName); }
+    catch(err){
+      return '<p style="color:#b3261e"><b>报告生成出错</b>：'+err.message
+        +'——请把这句话发给我，我来修。</p>';
+    }
+  }
   if(ask && ask!=='世应'){
     html+='<div class="card report"><h2>参考断语<small>四步推导 · 仅供参考</small></h2>'
       +'<div class="rbanner">下面按六爻通行规则一步步推。规则与顺序都摊开，你可以逐条验算。<b>但"偏吉／偏凶"的权重是本工具自定义的，不是古法</b>——请当参考，不要当结论。</div>'
-      + buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName)
+      + safeReport(ask)
       +'<p class="note">换一套优先级，结论就会变。这正是"加权判断"无法自动化的原因。</p></div>';
   } else if(ask==='世应'){
     html+='<div class="card report"><h2>参考断语<small>感情／关系类</small></h2>'
       +'<div class="rbanner">这类问题不套六亲，直接看世应，不产生"偏好／偏坏"的数值判断。</div>'
-      + buildReport(L,p,'父母',mZhi,mWx,dZhi,benName,bianName).replace(/<h3>第一步[\s\S]*?<\/h3>/,'').replace(/<h3>第二步[\s\S]*?<h3>世应<\/h3>/,'<h3>世应</h3>')
+      + safeReport('父母').replace(/<h3>第一步[\s\S]*?<\/h3>/,'').replace(/<h3>第二步[\s\S]*?<h3>世应<\/h3>/,'<h3>世应</h3>')
       +'</div>';
   } else {
     html+='<div class="card"><h2>参考断语</h2><p class="note">在上面「你要问什么」里选一项，这里会给出<b>第一步定用神 → 第二步看旺衰 → 第三步看生克 → 第四步看变卦 → 世应 → 综合断语 → 建议</b>的完整推导。</p></div>';

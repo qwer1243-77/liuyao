@@ -90,7 +90,23 @@
   .verdict{font-size:22px;font-weight:700;text-align:center;margin:4px 0 10px;letter-spacing:2px;}
   .report h3{font-size:13.5px;margin:14px 0 6px;padding:5px 0 5px 9px;border-left:3px solid var(--ink);background:#f4f6f9;}
   .report p{font-size:13px;margin:6px 0;line-height:1.62;}
-  .wpanel{background:#f7f9fb;border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin:8px 0;}
+  .yqlead{font-size:12.5px;color:#26313d;margin:6px 0;line-height:1.6;}
+  .yqrow{border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin:8px 0;background:#fcfdfe;}
+  .yqrow.best{border-color:#1a6b3c;background:#f3faf5;}
+  .yqhead{font-size:13.5px;margin-bottom:4px;}
+  .yqrank{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;
+          background:var(--ink);color:#fff;border-radius:50%;font-size:11px;margin-right:6px;}
+  .yqrow.best .yqrank{background:var(--green);}
+  .yqmz{font-size:11.5px;color:var(--sub);}
+  .yqbest{font-size:11px;background:var(--green);color:#fff;border-radius:5px;padding:1px 6px;}
+  .yqbody{font-size:12.5px;color:#3a4653;line-height:1.55;}
+  .yqsib{font-size:11.5px;color:var(--sub);margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);}
+  .ruler{border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-top:10px;background:#f7f9fb;}
+  .ruler summary{cursor:pointer;font-size:12.5px;color:var(--blue);font-weight:600;}  .wg label i{font-style:normal;font-size:10.5px;color:#8a95a1;}
+  .wpreset{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}
+  .wpreset button{padding:6px 10px;font-size:12px;border:1px solid var(--line);background:#fff;
+                  border-radius:8px;font-family:inherit;color:var(--ink);cursor:pointer;}
+  .wpreset button:active{background:var(--soft);}  .wpanel{background:#f7f9fb;border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin:8px 0;}
   .wpanel summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--blue);}
   .wg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 6px;}
   .wg label{font-size:12px;color:var(--sub);display:flex;flex-direction:column;gap:3px;}
@@ -563,14 +579,23 @@ function run(){
   if(ask && ask!=='世应'){
     html+='<div class="card report"><h2>参考断语<small>四步推导 · 仅供参考</small></h2>'
       +'<div class="rbanner">下面按六爻通行规则一步步推。规则与顺序都摊开，你可以逐条验算。<b>但"偏吉／偏凶"的权重是本工具自定义的，不是古法</b>——请当参考，不要当结论。</div>'
-      + (function(){ const W=loadW(); return '<details class="wpanel"><summary>调整评分权重（改完立刻重算）</summary><div class="wg">'
-        +'<label>用神旺衰<input type="number" id="w_ys" step="0.5" min="0" value="'+W.ys+'"></label>'
-        +'<label>变卦关系<input type="number" id="w_rel" step="0.5" min="0" value="'+W.rel+'"></label>'
-        +'<label>原神<input type="number" id="w_yuan" step="0.5" min="0" value="'+W.yuan+'"></label>'
-        +'<label>忌神<input type="number" id="w_ji" step="0.5" min="0" value="'+W.ji+'"></label>'
-        +'<label>判吉阈值<input type="number" id="w_th" step="0.5" min="0.5" value="'+W.th+'"></label>'
-        +'</div><p class="note">默认全是 1、阈值 2。想让"用神旺衰"更重就调大它的数；想更严格就调高阈值。改完自动重排，不会新增历史记录。</p></details>'; })()
-      + safeReport(ask)
+      + (function(){ const W=loadW(); return '<details class="wpanel"><summary>想让判定更严或更松？点这里调权重</summary>'
+        +'<p class="note" style="margin:8px 0">这几项<b>只影响最后那句「偏吉／偏凶」</b>，不影响前面四步的推导——那些是按规则算出来的，改权重也不会变。调权重不是改事实，只是换一把尺子。</p>'
+        +'<div class="wg">'
+        +'<label>用神旺衰 ×<input type="number" id="w_ys" step="0.5" min="0" value="'+W.ys+'"><i>主角本身有没有力气</i></label>'
+        +'<label>变卦关系 ×<input type="number" id="w_rel" step="0.5" min="0" value="'+W.rel+'"><i>动爻化出的是帮还是坑</i></label>'
+        +'<label>原神 ×<input type="number" id="w_yuan" step="0.5" min="0" value="'+W.yuan+'"><i>有没有人来帮</i></label>'
+        +'<label>忌神 ×<input type="number" id="w_ji" step="0.5" min="0" value="'+W.ji+'"><i>有没有人来阻</i></label>'
+        +'<label>判吉阈值 ±<input type="number" id="w_th" step="0.5" min="0.5" value="'+W.th+'"><i>要多少分才算吉／凶</i></label>'
+        +'</div>'
+        +'<div class="wpreset"><button type="button" data-p="1,1,1,1,2">均衡（默认）</button>'
+        +'<button type="button" data-p="2,1,1,1,2">重条件</button>'
+        +'<button type="button" data-p="1,1,1,2,2">重阻力</button>'
+        +'<button type="button" data-p="1,1,1,1,1">严苛</button>'
+        +'<button type="button" data-p="1,1,1,1,3">宽松</button></div>'
+        +'<p class="note"><b>拿不准就点「均衡」。</b><b>重点在哪儿</b>要看你信哪一派：信「事情本身有底子就行」→ 加大用神旺衰；信「阻力才是决定性的」→ 加大忌神；信「变化才是关键」→ 加大变卦关系。'
+        +'这不是找标准答案，是选你认可的那把尺子——选完自己记着，以后别偷偷换。</p>'
+        +'</details>'; })()      + safeReport(ask)
       +'<p class="note">换一套优先级，结论就会变。这正是"加权判断"无法自动化的原因。</p></div>';
   } else if(ask==='世应'){
     html+='<div class="card report"><h2>参考断语<small>感情／关系类</small></h2>'
@@ -1026,44 +1051,95 @@ function renderYingqi(idx){
   const S=window.__STATE, box=document.getElementById('yqout');
   if(!S||isNaN(idx)||idx===undefined){ if(box) box.innerHTML=''; return; }
   const y=S.L[idx];
-  const base=new Date(S.Y, S.M-1, S.D);
+  const base=new Date(S.Y,S.M-1,S.D);
+  const yongKong = S.kw.indexOf(y.zhi)>=0;
+
+  function rulesFor(z){
+    const hits=[]; const isYong=(z===y.zhi);
+    if(yongKong && isYong) hits.push({k:'填实',pts:3,plain:'空亡被填实——原本落空的事有了着落'});
+    else if(isYong) hits.push({k:'值日',pts:3,plain:'用神自己当值，是它最有力的日子'});
+    if(LIUHE[y.zhi]===z) hits.push({k:'六合',pts:2,plain:'与用神相合——主牵引，事慢但能成'});
+    if(SHENG[wxOfZhi(z)]===y.wx) hits.push({k:'原神值日',pts:2,plain:'生它的那一行当值——容易有人帮、条件转好'});
+    if(S.dongZhi.indexOf(z)>=0) hits.push({k:'动爻值日',pts:2,plain:'动爻在这天当值——事情容易动起来'});
+    if(S.bianZhi.indexOf(z)>=0) hits.push({k:'变爻值日',pts:2,plain:'用神变出的那一爻当值——结果容易显现'});
+    if(S.L.some(function(x){return KE[x.wx]===y.wx && LIUCHONG[x.zhi]===z;})) hits.push({k:'忌神受冲',pts:2,plain:'克它的那一行被冲——阻力暂时被压住'});
+    if(yongKong && LIUCHONG[z]===y.zhi) hits.push({k:'冲空',pts:2,plain:'空亡被冲开——落空的事有转机'});
+    if(LIUCHONG[y.zhi]===z) hits.push({k:'相冲',pts:1,plain:'与用神相冲——主冲动或破散（用神旺则是"动"，衰则是"破"）'});
+    return hits;
+  }
+
   const rows=[];
   for(let n=0;n<=60;n++){
     const d=new Date(base.getTime()+n*86400000);
     const di=(S.dayIdx+n)%60;
     const z=ZHI[di%12], gz=GAN[di%10]+z;
-    const rs=[]; let sc=0;
-    const add=(name,pts)=>{ if(rs.indexOf(name)<0){rs.push(name); sc+=pts;} };
-    if(z===y.zhi) add('值日（用神本气）',3);
-    if(LIUHE[y.zhi]===z) add('六合',2);
-    if(LIUCHONG[y.zhi]===z) add('相冲（旺则动、衰则破）',1);
-    if(S.kw.indexOf(y.zhi)>=0){
-      if(z===y.zhi) add('填实·出空',3);
-      if(LIUCHONG[z]===y.zhi) add('冲空·出空',2);
-    }
-    if(SHENG[wxOfZhi(z)]===y.wx) add('原神值日（生用神）',2);
-    if(S.dongZhi.indexOf(z)>=0) add('动爻值日',2);
-    if(S.bianZhi.indexOf(z)>=0) add('变爻值日',2);
-    if(S.L.some(x=>KE[x.wx]===y.wx && LIUCHONG[x.zhi]===z)) add('忌神受冲',2);
-    if(rs.length===0) continue;
-    rows.push({m:d.getMonth()+1,day:d.getDate(),gz,z,rs,sc,
-      mz:monthZhi(d.getFullYear(),d.getMonth()+1,d.getDate())});
+    const hits=rulesFor(z);
+    if(!hits.length) continue;
+    const sc=hits.reduce(function(a,h){return a+h.pts;},0);
+    rows.push({m:d.getMonth()+1, day:d.getDate(), gz:gz, z:z, hits:hits, sc:sc,
+      mz:monthZhi(d.getFullYear(), d.getMonth()+1, d.getDate())});
   }
-  rows.sort((a,b)=> b.sc-a.sc || (a.m-b.m) || (a.day-b.day));
-  let top=rows.slice(0,10);
-  // 保证每一种规则至少出现一次（取最早那一条），避免低分但重要的信号被挤掉
-  const seen=new Set();
-  top.forEach(r=>r.rs.forEach(n=>seen.add(n)));
-  rows.forEach(r=>{ r.rs.forEach(n=>{ if(!seen.has(n)){ seen.add(n); top.push(r); } }); });
-  top.sort((a,b)=> b.sc-a.sc || (a.m-b.m) || (a.day-b.day));
-  top=top.slice(0,12);
-  box.innerHTML=`<table><colgroup><col style="width:20%"><col style="width:15%"><col style="width:12%"><col style="width:53%"></colgroup>
-    <tr><th>日期</th><th>干支</th><th>月建</th><th>命中规则</th></tr>`+
-    top.map(r=>`<tr><td>${r.m}/${r.day}</td><td>${r.gz}</td><td>${r.mz}月</td>
-      <td style="text-align:left;font-size:10.5px">${r.rs.join('；')}　<b>${r.sc}分</b></td></tr>`).join('')+
-    `</table><p class="note">同分按日期先后排。<b>只列候选，不替你拍板</b>——冲是动是破、哪条规则该压哪条，仍需你判断。</p>`;
-}
+  rows.sort(function(a,b){ return b.sc-a.sc || (a.m-b.m) || (a.day-b.day); });
 
+  let top=rows.slice(0,10);
+  const seen={};
+  top.forEach(function(r){ r.hits.forEach(function(h){ seen[h.k]=1; }); });
+  rows.forEach(function(r){ r.hits.forEach(function(h){ if(!seen[h.k]){ seen[h.k]=1; top.push(r); } }); });
+  top.sort(function(a,b){ return b.sc-a.sc || (a.m-b.m) || (a.day-b.day); });
+  top=top.slice(0,6);
+
+  if(!top.length){ box.innerHTML='<p class="note">这个用神在往后 60 天里没有明显的应期信号，说明事情短期内不会有明确动静。</p>'; return; }
+
+  let h='<p class="yqlead">「应期」＝这件事<b>最可能在哪些天有动静</b>。'
+    +'它不是预言"那天一定发生"，而是提示你<b>在那几天前后多留意</b>：该推进的推进、该等等的等等。</p>';
+  h+='<p class="yqlead">下面按可能性从高到低排。第一名是信号最集中的一天；往后依次减弱。</p>';
+
+  // 把「规则组合相同」的日子合并，避免六条一模一样
+  const groups=[];
+  top.forEach(function(r){
+    const sig=r.hits.map(function(x){return x.k;}).sort().join('|');
+    let g=null;
+    for(let i=0;i<groups.length;i++){ if(groups[i].sig===sig){ g=groups[i]; break; } }
+    if(g){ g.more.push(r); } else { groups.push({sig:sig, lead:r, more:[], sc:r.sc}); }
+  });
+  groups.sort(function(a,b){ return b.sc-a.sc || (a.lead.m-b.lead.m) || (a.lead.day-b.lead.day); });
+
+  groups.slice(0,4).forEach(function(g,i){
+    const r=g.lead;
+    const plain=r.hits.map(function(x){return x.plain;}).join('；');
+    let more='';
+    if(g.more.length){
+      more='<div class="yqsib">同一类（'+r.hits.map(function(x){return x.k;}).join('＋')+'）还有 '
+        +g.more.slice(0,5).map(function(x){return x.m+'/'+x.day;}).join('、')
+        +'，共 '+(g.more.length+1)+' 天，作用相近</div>';
+    }
+    h+='<div class="yqrow'+(i===0?' best':'')+'">'
+      +'<div class="yqhead"><span class="yqrank">'+(i+1)+'</span>'
+      +'<b>'+r.m+' 月 '+r.day+' 日</b>　'+r.gz+'　<span class="yqmz">'+r.mz+'月</span>'
+      +(i===0?'　<span class="yqbest">信号最集中</span>':'')+'</div>'
+      +'<div class="yqbody">'+plain+'。</div>'+more+'</div>';
+  });
+
+  h+='<p class="yqlead"><b>怎么用</b>：把第 1、2 名那几天圈起来。到那几天，如果事情真动了（有消息、有人来找、你自己突然想动），那就是应期对上了；'
+    +'如果一点动静都没有，说明这个用神取错了，或者事情本来就不在这两个月内。回看的时候把结果记下来，比事后猜有用。</p>';
+
+  let rt='<table><tr><th>规则</th><th>分</th><th>意思</th></tr>'
+    +'<tr><td>值日</td><td>3</td><td>用神本气当值，最有力</td></tr>'
+    +'<tr><td>填实</td><td>3</td><td>空亡被填上，落空的事有实</td></tr>'
+    +'<tr><td>六合</td><td>2</td><td>与用神相合，主牵引</td></tr>'
+    +'<tr><td>原神值日</td><td>2</td><td>生它的一行当值，有帮手</td></tr>'
+    +'<tr><td>动爻值日</td><td>2</td><td>动爻当值，事情容易动</td></tr>'
+    +'<tr><td>变爻值日</td><td>2</td><td>变出的那一爻当值，结果显现</td></tr>'
+    +'<tr><td>忌神受冲</td><td>2</td><td>阻力被冲，暂时压住</td></tr>'
+    +'<tr><td>冲空</td><td>2</td><td>空亡被冲开，有转机</td></tr>'
+    +'<tr><td>相冲</td><td>1</td><td>与用神冲，旺则动、衰则破</td></tr></table>';
+  h+='<details class="ruler"><summary>这些日子是怎么挑出来的（规则与分数）</summary>'
+    +'<p class="note">每天检查九条规则，命中哪条就加对应分数，分数越高排越前。'
+    +'<b>这套分数是本工具自定的</b>，换一套古法，排序就会变——所以它只是候选，不是判决。</p>'
+    +rt+'</details>';
+
+  box.innerHTML=h;
+}
 /* ============ 初始化 ============ */
 (function init(){
   const now=new Date();
@@ -1122,7 +1198,7 @@ function renderYingqi(idx){
     }
   }
 
-  document.getElementById('ver').textContent='v3.0 · 缓存v11 · 11-22';
+  document.getElementById('ver').textContent='v3.1 · 缓存v12 · 11-22';
   qInput.addEventListener('input',autoFromQuestion);
   qInput.addEventListener('change',autoFromQuestion);
   askSel.addEventListener('change',function(){ updAskHint(); });

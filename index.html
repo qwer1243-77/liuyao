@@ -87,6 +87,14 @@
   .tabs button{flex:1;padding:9px;font-size:13px;border:1px solid var(--line);
     background:#fff;border-radius:9px;font-family:inherit;color:var(--sub);cursor:pointer;}
   .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .verdict{font-size:22px;font-weight:700;text-align:center;margin:4px 0 10px;letter-spacing:2px;}
+  .jl{font-size:12.5px;margin:4px 0;padding-left:14px;text-indent:-14px;line-height:1.45;}
+  .jl.g{color:var(--green);} .jl.k{color:var(--red);} .jl.n{color:var(--sub);}
+  details{border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:8px;background:#fcfdfe;}
+  details summary{cursor:pointer;font-weight:600;font-size:13.5px;outline:none;}
+  details[open] summary{margin-bottom:7px;}
+  .kb{font-size:12.5px;color:#26313d;line-height:1.6;}
+  .kb table{margin:6px 0;}
   .hrow{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border:1px solid var(--line);
         border-radius:9px;margin-bottom:7px;cursor:pointer;background:#fcfdfe;}
   .hrow:active{background:#eef2f6;}
@@ -132,12 +140,12 @@
   <label>你要问什么（决定用神，不懂就选一项，工具会告诉你为什么）</label>
   <select id="ask">
     <option value="">（不指定，我自己判断）</option>
-    <option value="妻财">求财、薪水、买卖、男问婚</option>
-    <option value="官鬼">事业、工作、升迁、官司、女问婚</option>
-    <option value="父母">学业、考试、文书、房子、长辈、消息</option>
-    <option value="子孙">子女、健康、宠物、解忧</option>
-    <option value="兄弟">合伙、竞争、借贷、破财</option>
-    <option value="世应">感情／关系（看世应，不套六亲）</option>
+    <option value="妻财">求财、薪水、买卖、男问婚　→ 用神：妻财</option>
+    <option value="官鬼">事业、工作、升迁、官司、女问婚　→ 用神：官鬼</option>
+    <option value="父母">学业、考试、文书、房子、长辈、消息　→ 用神：父母</option>
+    <option value="子孙">子女、健康、宠物、解忧　→ 用神：子孙</option>
+    <option value="兄弟">合伙、竞争、借贷、破财　→ 用神：兄弟</option>
+    <option value="世应">感情／关系　→ 看世应，不套六亲</option>
   </select>
 </div>
 
@@ -208,7 +216,8 @@ const LIUCHONG={子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:
 const LIUSHEN=['青龙','朱雀','勾陈','螣蛇','白虎','玄武'];
 const SHEN_START={'甲':0,'乙':0,'丙':1,'丁':1,'戊':2,'己':3,'庚':4,'辛':4,'壬':5,'癸':5};
 
-const TOPICS=[
+const QIN_ASK={妻财:'钱、薪水、买卖',官鬼:'工作、官司、女问婚',父母:'学业、文书、房子、长辈',子孙:'子女、健康、宠物',兄弟:'合伙、竞争、借贷'};
+const QIN_ASK_MAP_FOR_UI=1;const TOPICS=[
  {k:'',   t:'（不指定）', q:''},
  {k:'财', t:'求财、薪水、买卖、男问婚', q:'妻财'},
  {k:'官', t:'事业、工作、升迁、官司、疾病、女问婚', q:'官鬼'},
@@ -496,7 +505,7 @@ function run(){
   // 应期候选
   html+=`<div class="card noprint"><h2>应期候选<small>先选一条爻作为用神</small></h2>
     <select id="yqsel"><option value="">（选择用神爻）</option>${
-      L.slice().reverse().map(x=>`<option value="${x.i}">${POS[x.i]}爻　${x.qin}　${x.zhi}${x.wx}${x.moving?'（动）':''}</option>`).join('')
+      L.slice().reverse().map(x=>`<option value="${x.i}">${POS[x.i]}爻　${x.qin}　${x.zhi}${x.wx}${x.moving?'（动）':''}　—　问${QIN_ASK[x.qin]}选它</option>`).join('')
     }</select>
     <div id="yqout"></div>
     <p class="note">排序规则公开如下：值日 3 分、六合 2、原神值日 2、动爻值日 2、变爻值日 2、忌神受冲 2、冲空 2、填实 3、相冲 1。
@@ -506,14 +515,72 @@ function run(){
   // 用神说明
   html+=`<div class="card noprint"><h2>用神怎么定<small>按你选的「问什么」推给你看</small></h2>${yongHtml}</div>`;
 
-  html+=`<div class="warn"><b>本工具只做「算」，不做「断」。</b>
-  旺衰、六神、动变、伏神都是确定性规则，可以验算；但<b>取用神</b>取决于你的意图，<b>吉凶</b>取决于加权判断——这两步留给你。
-  若某条依据与你所学不符，先查该步的规则（纳甲／六亲／六神起法），再看结论。</div>`;
+  html+=`<div class="warn"><b>「算」的部分是确定的，「断」的部分只能参考。</b>
+  排盘、旺衰、六神、动变、伏神、应期——这些是确定性规则，可以逐条验算。
+  但<b>参考断语</b>用的权重是本工具自定义的，不是古法；<b>取用神</b>也取决于你真正想问什么。
+  所以：<b>断语可以看，不能当结论</b>。若某条依据与你所学不符，先查该步的规则（纳甲／六亲／六神起法），再看结论。</div>`;
 
   if(!window.__skipSave){
     saveHistory({t:Date.now(), q:q, casts:casts.slice(0,6), ben:benName, bian:bianName, moving:hasMoving,
       date:(Y+'-'+String(M).padStart(2,'0')+'-'+String(D).padStart(2,'0')), mZhi:mZhi, dgz:(dGan+dZhi)});
   }
+  // 参考断语
+  if(ask && ask!=='世应'){
+    const j=judgeOf(L,p,ask);
+    html+='<div class="card"><h2>参考断语<small>按公开规则机械得出</small></h2>'
+      +'<div class="verdict">'+j.level+'</div>'
+      +'<div>'+j.lines.map(x=>'<div class="jl '+x[0]+'">'+(x[0]==='g'?'＋':(x[0]==='k'?'－':'·'))+' '+x[1]+'</div>').join('')+'</div>'
+      +'<p class="note">有利项 '+j.good+' 个，不利项 '+j.bad+' 个（差 ≥2 判偏吉，≤ −2 判偏凶，其余中性）。'
+      +'<b>这套打分是本工具自定义的，不是古法</b>——古书只给倾向、不给权重。<b>仅供参考，判断权在你。</b></p>'
+      +'<p class="note">换一套优先级，结论就会变。这正是"加权判断"无法自动化的原因。</p></div>';
+  }
+
+  // 知识库
+  html+='<div class="card noprint"><h2>六爻基础<small>点开看，不用另找资料</small></h2>'
+   +'<details><summary>六亲是什么？为什么只有五类</summary><div class="kb">'
+   +'<p>六亲＝<b>以「我」（卦宫五行）为中心的六种关系</b>：生我者父母、我生者子孙、克我者官鬼、我克者妻财、同我者兄弟，再加上「我」自己，共六个，故称六亲。</p>'
+   +'<p>「我」就是卦宫本身，不单独挂牌，所以表里只有五类。</p>'
+   +'<p><b>男女问婚取用不同</b>：男问婚取妻财（我克者＝我能支配的＝妻）；女问婚取官鬼（克我者＝克我之人＝夫）。</p>'
+   +'</div></details>'
+   +'<details><summary>旺相休囚死：跟「当月」比出来的名次</summary><div class="kb">'
+   +'<p>它不是一个五行跟另一个五行比强弱，而是<b>一个五行在当前这个月还剩多少力气</b>。</p>'
+   +'<table><tr><th>与当月五行</th><th>名次</th><th>白话</th></tr>'
+   +'<tr><td>相同</td><td>旺</td><td>当班的，最有权</td></tr>'
+   +'<tr><td>它生的</td><td>相</td><td>被当班的照顾</td></tr>'
+   +'<tr><td>生它的</td><td>休</td><td>泄了力，歇着</td></tr>'
+   +'<tr><td>克它的</td><td>囚</td><td>跟当班对着干，被关</td></tr>'
+   +'<tr><td>它克的</td><td>死</td><td>被压着，最没气</td></tr></table>'
+   +'<p>强弱序：旺 &gt; 相 &gt; 休 &gt; 囚 &gt; 死。</p>'
+   +'<p><b>季节配五行</b>：春木、夏火、秋金、冬水，土寄于四季月（辰未戌丑）。</p>'
+   +'</div></details>'
+   +'<details><summary>用神怎么取？两现取哪个？</summary><div class="kb">'
+   +'<p>先按「你问什么」定六亲，这个六亲在卦里出现的那一爻就是用神。</p>'
+   +'<p><b>同一个六亲出现两次时</b>：① 取动的 → ② 取临世或应的 → ③ 取旺的 → ④ 取离世爻近的。</p>'
+   +'<p><b>一次都没出现</b>（用神不上卦）：去本宫首卦（八纯卦）里找它，叫<b>伏神</b>。</p>'
+   +'<p>本工具会按这四条自动套，并把用了哪条告诉你。</p>'
+   +'</div></details>'
+   +'<details><summary>动爻与变卦：事为什么会「变」</summary><div class="kb">'
+   +'<p>六次摇卦里出现三个背（老阳）或零个背（老阴），那一爻就是<b>动爻</b>：老阳变阴，老阴变阳。</p>'
+   +'<p>动爻翻面后，整卦变成另一个卦，叫<b>变卦</b>。本卦是现状，变卦是去向。</p>'
+   +'<p>动爻变出的新爻回头作用于原爻，共四种：<b>回头生</b>（加分）、<b>回头克</b>（减分）、<b>化泄</b>（原爻生变爻，耗气）、<b>化耗</b>（原爻克变爻，克出）。</p>'
+   +'</div></details>'
+   +'<details><summary>应期是怎么算出来的</summary><div class="kb">'
+   +'<p>应期不是猜日子，是找用神被<b>值、合、冲、出空</b>的那几天：</p>'
+   +'<table><tr><th>用神状态</th><th>取哪天</th></tr>'
+   +'<tr><td>旺相</td><td>值日或合日</td></tr>'
+   +'<tr><td>休囚</td><td>生扶之日</td></tr>'
+   +'<tr><td>空亡</td><td>出空之日</td></tr>'
+   +'<tr><td>入墓</td><td>冲墓之日</td></tr>'
+   +'<tr><td>有动爻</td><td>动爻值日或所化地支之日</td></tr></table>'
+   +'<p>本工具的排序规则直接印在应期表下面，可以自己验算。</p>'
+   +'</div></details>'
+   +'<details><summary>六神：青龙朱雀那些是什么</summary><div class="kb">'
+   +'<p>六神＝青龙、朱雀、勾陈、螣蛇、白虎、玄武，是贴在每一爻上的<b>形容词</b>，给六亲加色彩。</p>'
+   +'<p><b>它不决定吉凶</b>，只做修饰：五行定性质，六神定味道。</p>'
+   +'<p>起法：按日干定初爻（甲乙青龙、丙丁朱雀、戊勾陈、己螣蛇、庚辛白虎、壬癸玄武），再按固定次序上排。</p>'
+   +'</div></details>'
+   +'</div>';
+
   html+='<div class="card noprint"><h2>历史记录<small>存在本机，不上传</small></h2><div id="hist"></div></div>';
 
   out.innerHTML=html;
@@ -568,6 +635,47 @@ function relReason(rel,wx,bwx){
   return '';
 }
 
+/* ============ 参考断语（规则化，非古法，仅供参照） ============ */
+function judgeOf(L, p, ask){
+  const r=pickYongShen(L, ask, p.shi);
+  if(!r.pick) return {ok:false, level:'—', lines:[['k','本卦无「'+ask+'」，用神不上卦，须先看伏神；机械判断不适用。']]};
+  const y=r.pick, R={旺:5,相:4,休:3,囚:2,死:1};
+  const lines=[]; let good=0, bad=0;
+  const add=(cls,t)=>{ lines.push([cls,t]); };
+
+  if(R[y.ws]>=4){ add('g','用神'+POS[y.i]+'爻 '+y.zhi+y.wx+' 在月建下为「'+y.ws+'」——有力'); good++; }
+  else { add('k','用神'+POS[y.i]+'爻 '+y.zhi+y.wx+' 在月建下为「'+y.ws+'」——力弱'); bad++; }
+
+  if(y.moving){ add('n','用神发动——事在动，主快、主变'); } else { add('n','用神安静——事缓，暂无波澜'); }
+
+  if(y.rel){
+    const M={'回头生':['g','变爻生用神＝回头生，加分'],'回头克':['k','变爻克用神＝回头克，减分'],
+             '化泄':['k','用神去生变爻＝泄气，耗力'],'化耗':['k','用神去克变爻＝克出，耗力'],'比和':['n','同气，力量叠加']};
+    const m=M[y.rel]||['n',y.rel];
+    add(m[0],'用神动化'+y.bZhi+y.bWx+'：'+m[1]);
+    if(m[0]==='g') good++; else if(m[0]==='k') bad++;
+  }
+  if(y.kong){ add('k','用神逢空亡——主落空、暂时不实'); bad++; }
+
+  const yuan=L.filter(x=>SHENG[x.wx]===y.wx);
+  const ji=L.filter(x=>KE[x.wx]===y.wx);
+  if(!yuan.length){ add('k','原神不上卦——无援手'); bad++; }
+  else {
+    const my=yuan.filter(x=>x.moving);
+    if(my.length){ add('g','原神'+my.map(x=>POS[x.i]+'爻').join('、')+'发动，来生用神——有助力'); good++; }
+    else { add('n','原神在位但安静——助而不显'); }
+  }
+  if(!ji.length){ add('g','忌神不上卦——无阻力'); good++; }
+  else {
+    const mj=ji.filter(x=>x.moving);
+    if(mj.length){ add('k','忌神'+mj.map(x=>POS[x.i]+'爻').join('、')+'发动，来克用神——有阻力'); bad++; }
+    else { add('n','忌神在位但安静——阻力不大'); }
+  }
+
+  const d=good-bad;
+  const level = d>=2?'偏吉':(d<=-2?'偏凶':'中性/需观察');
+  return {ok:true, level:level, lines:lines, pick:y, good:good, bad:bad};
+}
 /* ============ 取用神（按公开规则推，不替你决定） ============ */
 const WS_RANK={旺:5,相:4,休:3,囚:2,死:1};
 function pickYongShen(L, qin, shiPos){

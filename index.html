@@ -129,6 +129,16 @@
   <select id="monthOverride"><option value="">自动</option></select>
   <label>日辰（自动按干支循环推算，一般不用改）</label>
   <select id="dayOverride"><option value="">自动</option></select>
+  <label>你要问什么（决定用神，不懂就选一项，工具会告诉你为什么）</label>
+  <select id="ask">
+    <option value="">（不指定，我自己判断）</option>
+    <option value="妻财">求财、薪水、买卖、男问婚</option>
+    <option value="官鬼">事业、工作、升迁、官司、女问婚</option>
+    <option value="父母">学业、考试、文书、房子、长辈、消息</option>
+    <option value="子孙">子女、健康、宠物、解忧</option>
+    <option value="兄弟">合伙、竞争、借贷、破财</option>
+    <option value="世应">感情／关系（看世应，不套六亲）</option>
+  </select>
 </div>
 
 <div class="card noprint">
@@ -410,9 +420,24 @@ function run(){
   const fu=fushenOf(L,p);
 
   /* ---- 输出 ---- */
-  const topicKey=(document.getElementById('topic')||{}).value||'';
-  const topic=TOPICS.find(t=>t.k===topicKey)||TOPICS[0];
-  const focusQin = topic.q && topic.q!=='世应' ? topic.q : '';
+  const ask=(document.getElementById('ask')||{}).value||'';
+  const focusQin = (ask && ask!=='世应') ? ask : '';
+  let yongPick=null, yongHtml='';
+  if(!ask){
+    yongHtml='<p class="note">在上面「你要问什么」里选一项，这里会说明用神怎么定、为什么取那一爻。不选也可以，自己判断就行。</p>';
+  } else if(ask==='世应'){
+    yongHtml='<p>感情、关系类的问题，通常<b>不套六亲</b>，直接看世应：<b>世＝你，应＝对方</b>。世应相生相合则顺，相冲相克则反复。</p>';
+  } else {
+    const r=pickYongShen(L, ask, p.shi);
+    yongPick=r.pick;
+    const cands=L.filter(x=>x.qin===ask);
+    yongHtml='<p>你问的是「'+ask+'」类的事，所以用神取 <b>'+ask+'</b>。本卦共有 '+cands.length+' 爻属'+ask+'：'
+      +cands.map(x=>POS[x.i]+'爻 '+x.zhi+x.wx+'（'+x.ws+(x.moving?'，动':'')+(x.sy?'，'+x.sy:'')+'）').join('、')+'。</p>'
+      +(r.pick
+        ? '<p>按规则选出：<b>'+POS[r.pick.i]+'爻 '+r.pick.zhi+r.pick.wx+'</b>　理由：'+r.why+'。</p>'
+        : '<p class="k">'+r.why+'。</p>')
+      +'<p class="note">取用神次序：取动者 → 取临世应者 → 取旺者 → 取近世者。这是通行做法，不是铁律；你若判断不同，以你的为准。</p>';
+  }
 
   let html='';
 
@@ -478,13 +503,8 @@ function run(){
     换一套优先级，排序就会变——<b>确定性来自「规则被写明」，不是来自「规则唯一」。</b></p>
   </div>`;
 
-  // 用神对照
-  html+=`<div class="card noprint"><h2>看哪一爻（用神参考）</h2>
-  <select id="topic"><option value="">（不指定）</option>${
-    TOPICS.slice(1).map(t=>`<option value="${t.k}">${t.t}</option>`).join('')
-  }</select>
-  <p class="note">选定后，上表中对应用神会标为绿色，便于定位。<b>工具不替你取用神，也不下断语。</b></p>
-  </div>`;
+  // 用神说明
+  html+=`<div class="card noprint"><h2>用神怎么定<small>按你选的「问什么」推给你看</small></h2>${yongHtml}</div>`;
 
   html+=`<div class="warn"><b>本工具只做「算」，不做「断」。</b>
   旺衰、六神、动变、伏神都是确定性规则，可以验算；但<b>取用神</b>取决于你的意图，<b>吉凶</b>取决于加权判断——这两步留给你。
@@ -499,38 +519,29 @@ function run(){
   out.innerHTML=html;
   out.classList.remove('hidden');
 
-  // 用神高亮重绘
-  const sel=document.getElementById('topic');
-  if(topicKey) sel.value=topicKey;
-  sel.addEventListener('change',()=>{ rerenderHighlight(); });
-
   window.__STATE={L,p,kw,mZhi,dayIdx,Y,M,D,
     dongZhi:L.filter(x=>x.moving).map(x=>x.zhi),
     bianZhi:L.filter(x=>x.moving).map(x=>x.bZhi).filter(Boolean)};
   const yqsel=document.getElementById('yqsel');
-  if(yqsel) yqsel.addEventListener('change',()=>renderYingqi(+yqsel.value));
-  renderHighlight(L,p,sel.value);
+  if(yqsel){
+    yqsel.addEventListener('change',()=>renderYingqi(+yqsel.value));
+    if(yongPick){ yqsel.value=yongPick.i; renderYingqi(yongPick.i); }
+  }
+  renderHighlight(L,focusQin);
   renderHistory();
   window.scrollTo({top:out.offsetTop-10,behavior:'smooth'});
 }
 
-function renderHighlight(L,p,key){
-  const t=TOPICS.find(x=>x.k===key);
-  const q=t&&t.q&&t.q!=='世应'?t.q:'';
+function renderHighlight(L,qin){
   const rows=document.querySelectorAll('#out table tr');
-  let n=0;
   rows.forEach((tr,idx)=>{
     if(idx===0) return;
-    const qinCell=tr.children[3];
-    if(!qinCell) return;
-    const on = q && qinCell.textContent.trim().startsWith(q);
-    tr.style.background = on? '#f3faf5' : '';
+    const c=tr.children[3];
+    if(!c) return;
+    tr.style.background = (qin && c.textContent.trim().startsWith(qin)) ? '#f3faf5' : '';
   });
 }
-function rerenderHighlight(){
-  const sel=document.getElementById('topic');
-  renderHighlight(window.__L,window.__p,sel.value);
-}
+
 
 function qinReason(gw,zw){
   if(zw===gw) return '同我者';
@@ -557,6 +568,23 @@ function relReason(rel,wx,bwx){
   return '';
 }
 
+/* ============ 取用神（按公开规则推，不替你决定） ============ */
+const WS_RANK={旺:5,相:4,休:3,囚:2,死:1};
+function pickYongShen(L, qin, shiPos){
+  const c=L.filter(x=>x.qin===qin);
+  if(!c.length) return {pick:null, why:'本卦没有这个六亲，属「用神不上卦」——要去本宫首卦里找伏神'};
+  if(c.length===1) return {pick:c[0], why:'本卦此六亲只出现一次'};
+  const desc='两现（'+c.map(x=>POS[x.i]+'爻').join('、')+'）';
+  const mov=c.filter(x=>x.moving);
+  if(mov.length===1) return {pick:mov[0], why:desc+'，按「取动者」，取 '+POS[mov[0].i]+' 爻'};
+  const sy=c.filter(x=>x.sy);
+  if(mov.length===0 && sy.length===1) return {pick:sy[0], why:desc+'，皆静，按「取临世应者」，取 '+POS[sy[0].i]+' 爻'};
+  const sorted=c.slice().sort((a,b)=>WS_RANK[b.ws]-WS_RANK[a.ws]);
+  if(WS_RANK[sorted[0].ws]>WS_RANK[sorted[1].ws])
+    return {pick:sorted[0], why:desc+'，按「取旺者」，取 '+POS[sorted[0].i]+' 爻（'+sorted[0].ws+'）'};
+  const near=c.slice().sort((a,b)=>Math.abs(a.i+1-shiPos)-Math.abs(b.i+1-shiPos));
+  return {pick:near[0], why:desc+'，旺衰相当，按「取近世者」，取 '+POS[near[0].i]+' 爻'};
+}
 /* ============ 历史记录（localStorage） ============ */
 const HKEY='liuyao_history_v1';
 function loadHistory(){
@@ -674,4 +702,3 @@ if('serviceWorker' in navigator){
 </script>
 </body>
 </html>
-

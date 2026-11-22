@@ -1,4 +1,4 @@
-const CACHE='liuyao-v12';
+const CACHE='liuyao-v13';
 const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e=>{

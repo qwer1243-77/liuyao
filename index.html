@@ -103,6 +103,7 @@
   .yqsib{font-size:11.5px;color:var(--sub);margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);}
   .ruler{border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-top:10px;background:#f7f9fb;}
   .ruler summary{cursor:pointer;font-size:12.5px;color:var(--blue);font-weight:600;}  .wg label i{font-style:normal;font-size:10.5px;color:#8a95a1;}
+  .wscore{background:#eef4fb;border:1px solid #b9cde4;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#12385c;margin:8px 0;}
   .wpreset{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}
   .wpreset button{padding:6px 10px;font-size:12px;border:1px solid var(--line);background:#fff;
                   border-radius:8px;font-family:inherit;color:var(--ink);cursor:pointer;}
@@ -581,19 +582,25 @@ function run(){
       +'<div class="rbanner">下面按六爻通行规则一步步推。规则与顺序都摊开，你可以逐条验算。<b>但"偏吉／偏凶"的权重是本工具自定义的，不是古法</b>——请当参考，不要当结论。</div>'
       + (function(){ const W=loadW(); return '<details class="wpanel"><summary>想让判定更严或更松？点这里调权重</summary>'
         +'<p class="note" style="margin:8px 0">这几项<b>只影响最后那句「偏吉／偏凶」</b>，不影响前面四步的推导——那些是按规则算出来的，改权重也不会变。调权重不是改事实，只是换一把尺子。</p>'
+        + (function(){ const S2=scoreOf(L,p,ask); if(!S2) return '';
+            const W2=S2.W;
+            return '<div class="wscore">当前：加分 <b>'+S2.g+'</b>　减分 <b>'+S2.b+'</b>　合计 <b>'+(S2.d>0?'+':'')+S2.d+'</b>'
+              +'　→　<b>'+S2.lvl+'</b>（阈值 ±'+W2.th+'）</div>'; })()
         +'<div class="wg">'
-        +'<label>用神旺衰 ×<input type="number" id="w_ys" step="0.5" min="0" value="'+W.ys+'"><i>主角本身有没有力气</i></label>'
-        +'<label>变卦关系 ×<input type="number" id="w_rel" step="0.5" min="0" value="'+W.rel+'"><i>动爻化出的是帮还是坑</i></label>'
-        +'<label>原神 ×<input type="number" id="w_yuan" step="0.5" min="0" value="'+W.yuan+'"><i>有没有人来帮</i></label>'
-        +'<label>忌神 ×<input type="number" id="w_ji" step="0.5" min="0" value="'+W.ji+'"><i>有没有人来阻</i></label>'
-        +'<label>判吉阈值 ±<input type="number" id="w_th" step="0.5" min="0.5" value="'+W.th+'"><i>要多少分才算吉／凶</i></label>'
+        +'<label>用神旺衰 ×<input type="number" id="w_ys" step="0.1" min="0" value="'+W.ys+'"><i>主角本身有没有力气</i></label>'
+        +'<label>变卦关系 ×<input type="number" id="w_rel" step="0.1" min="0" value="'+W.rel+'"><i>动爻化出的是帮还是坑</i></label>'
+        +'<label>原神 ×<input type="number" id="w_yuan" step="0.1" min="0" value="'+W.yuan+'"><i>有没有人来帮</i></label>'
+        +'<label>忌神 ×<input type="number" id="w_ji" step="0.1" min="0" value="'+W.ji+'"><i>有没有人来阻</i></label>'
+        +'<label>判吉阈值 ±<input type="number" id="w_th" step="0.1" min="0.5" value="'+W.th+'"><i>要多少分才算吉／凶</i></label>'
         +'</div>'
         +'<div class="wpreset"><button type="button" data-p="1,1,1,1,2">均衡（默认）</button>'
         +'<button type="button" data-p="2,1,1,1,2">重条件</button>'
         +'<button type="button" data-p="1,1,1,2,2">重阻力</button>'
         +'<button type="button" data-p="1,1,1,1,1">严苛</button>'
         +'<button type="button" data-p="1,1,1,1,3">宽松</button></div>'
-        +'<p class="note"><b>拿不准就点「均衡」。</b><b>重点在哪儿</b>要看你信哪一派：信「事情本身有底子就行」→ 加大用神旺衰；信「阻力才是决定性的」→ 加大忌神；信「变化才是关键」→ 加大变卦关系。'
+        +'<p class="note"><b>别把权重当成"现实的倍数"。</b>填 2 不是"努力了 2 倍"，也不是"效率高了 2 倍"——现实里的努力、专注、效率，六爻不用数字建模，也建模不了。</p>'
+        +'<p class="note">权重只表示一件事：<b>在这场判定里，你愿意把哪一类证据看得更重</b>。它调的是"规则之间的相对轻重"，不是"现实中的强度"。可以填小数（0.5、1.5 都行）。</p>'
+        +'<p class="note"><b>日常就停在「均衡」，别动它。</b><b>重点在哪儿</b>要看你信哪一派：信「事情本身有底子就行」→ 加大用神旺衰；信「阻力才是决定性的」→ 加大忌神；信「变化才是关键」→ 加大变卦关系。'
         +'这不是找标准答案，是选你认可的那把尺子——选完自己记着，以后别偷偷换。</p>'
         +'</details>'; })()      + safeReport(ask)
       +'<p class="note">换一套优先级，结论就会变。这正是"加权判断"无法自动化的原因。</p></div>';
@@ -725,6 +732,28 @@ function loadW(){
 }
 function num(v,d){ v=parseFloat(v); return isNaN(v)?d:v; }
 function saveW(w){ try{ localStorage.setItem(WKEY, JSON.stringify(w)); }catch(e){} }
+function scoreOf(L,p,ask){
+  const W=loadW();
+  const r=pickYongShen(L,ask,p.shi); const y=r.pick;
+  if(!y) return null;
+  const R={旺:5,相:4,休:3,囚:2,死:1};
+  const strong=R[y.ws]>=4;
+  const yuan=L.filter(function(x){return SHENG[x.wx]===y.wx;});
+  const ji=L.filter(function(x){return KE[x.wx]===y.wx;});
+  const ym=yuan.filter(function(x){return x.moving;}).length;
+  const jm=ji.filter(function(x){return x.moving;}).length;
+  let g=0,b=0;
+  if(strong) g+=W.ys; else b+=W.ys;
+  if(y.rel==='回头生') g+=W.rel;
+  if(y.rel==='回头克'||y.rel==='化泄'||y.rel==='化耗') b+=W.rel;
+  if(y.kong) b+=W.rel;
+  if(ym) g+=W.yuan; else if(yuan.length===0) b+=W.yuan;
+  if(jm) b+=W.ji; else if(ji.length===0) g+=W.ji;
+  const rd=function(v){return Math.round(v*10)/10;};
+  const d=rd(g-b);
+  return {g:rd(g), b:rd(b), d:d,
+          lvl:(d>=W.th?'偏吉':(d<=-W.th?'偏凶':'中性、需观察')), W:W, y:y, strong:strong};
+}
 /* ============ 按「问什么」定制的落点措辞 ============ */
 const DOMAIN={
  妻财:{intro:'问钱，看的是「进项」和「留存」两件事——有没有进来的路，以及进来之后留不留得住。',
@@ -892,17 +921,8 @@ function buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName){
 
   // 七、综合
   sec('综合断语');
-  const W=loadW();
-  let g=0,b=0;
-  if(strong) g+=W.ys; else b+=W.ys;
-  if(y.rel==='回头生') g+=W.rel;
-  if(y.rel==='回头克'||y.rel==='化泄'||y.rel==='化耗') b+=W.rel;
-  if(y.kong) b+=W.rel;
-  if(ym) g+=W.yuan; else if(yuan.length===0) b+=W.yuan;
-  if(jm) b+=W.ji; else if(ji.length===0) g+=W.ji;
-  const g1=Math.round(g*10)/10, b1=Math.round(b*10)/10;
-  const d=Math.round((g-b)*10)/10;
-  const lvl = d>=W.th?'偏吉':(d<=-W.th?'偏凶':'中性、需观察');
+  const SC=scoreOf(L,p,ask)||{g:0,b:0,d:0,lvl:'—',W:loadW()};
+  const W=SC.W, g1=SC.g, b1=SC.b, d=SC.d, lvl=SC.lvl;
   P('倾向：<b>'+lvl+'</b>——合计 <b>'+(d>0?'+':'')+d+'</b>（加分 '+g1+'，减分 '+b1+'）');
   P('按你当前权重：用神旺衰×'+W.ys+'、变卦关系×'+W.rel+'、原神×'+W.yuan+'、忌神×'+W.ji+'，判吉阈值 ±'+W.th+'。'
     +'<b>这套权重是本工具自定的，不是古法</b>——你可以改，改了结论就变，这样至少是"可复现、可争议"的。');
@@ -1092,6 +1112,9 @@ function renderYingqi(idx){
 
   let h='<p class="yqlead">「应期」＝这件事<b>最可能在哪些天有动静</b>。'
     +'它不是预言"那天一定发生"，而是提示你<b>在那几天前后多留意</b>：该推进的推进、该等等的等等。</p>';
+  h+='<p class="yqlead" style="background:#fff8e6;border:1px solid #e6cf9a;border-radius:8px;padding:8px 10px">'
+    +'<b>注意：应期不等于「好运日」。</b>它只说"哪几天容易有动静、见分晓"；好事还是坏事，要看上面那份断语——'
+    +'用神有力，动起来往往成；用神无力，动起来可能就是散。所以别把它当吉日来挑，把它当"留意日"。</p>';
   h+='<p class="yqlead">下面按可能性从高到低排。第一名是信号最集中的一天；往后依次减弱。</p>';
 
   // 把「规则组合相同」的日子合并，避免六条一模一样
@@ -1198,7 +1221,7 @@ function renderYingqi(idx){
     }
   }
 
-  document.getElementById('ver').textContent='v3.1 · 缓存v12 · 11-22';
+  document.getElementById('ver').textContent='v3.2 · 缓存v13 · 11-22';
   qInput.addEventListener('input',autoFromQuestion);
   qInput.addEventListener('change',autoFromQuestion);
   askSel.addEventListener('change',function(){ updAskHint(); });

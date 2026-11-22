@@ -663,6 +663,15 @@ function relReason(rel,wx,bwx){
 }
 
 /* ============ 完整推导报告 ============ */
+const SHEN_DESC={
+ 青龙:'喜顺、体面、带点好事',朱雀:'消息、口舌、文书往来',勾陈:'迟滞、拖沓、纠缠不清',
+ 螣蛇:'缠绕、多思、反复琢磨',白虎:'急切、刚猛、来势直接',玄武:'暗昧、隐藏、不便明说'
+};
+const WS_PLAIN={
+ 旺:'当令，力量最足，做起来顺手',相:'被当令者所生，力量次足，有人帮衬',
+ 休:'泄了力，暂时歇着，使不上劲',囚:'与月令相克，被压着，勉强支撑',
+ 死:'被月令所克，力量最弱，硬推无用'
+};
 function buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName){
   const r=pickYongShen(L,ask,p.shi);
   const y=r.pick;
@@ -671,83 +680,126 @@ function buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName){
   if(!y){ P('本卦没有「'+ask+'」，用神不上卦，属伏神范畴，无法按常规推导。'); return o.join(''); }
 
   const cands=L.filter(x=>x.qin===ask);
+  const shi=L[p.shi-1], ying=L[(p.shi>3?p.shi-3:p.shi+3)-1];
 
   // 一、定用神
   sec('第一步：定用神');
-  P('问「'+ask+'」，用神取 <b>'+ask+'</b>（'+QIN_DESC[ask]+'）。');
-  P('本卦 '+ask+' '+(cands.length>1?'<b>两现</b>':'只出现一次')+'：'+cands.map(x=>POSN[x.i]+'爻 '+x.zhi+x.wx+(x.moving?'（动）':'')+(x.sy?'（'+x.sy+'）':'')).join('、')+'。');
-  P('按规则，'+r.why+' &rarr; <b>'+POSN[y.i]+'爻 '+y.zhi+y.wx+'</b>。');
+  P('你要问的是「'+ask+'」，用神就取 <b>'+ask+'</b>——它代表'+QIN_DESC[ask]+'。问这类事，卦里代表它的那一爻就是主角，其余都是配角。');
+  P('本卦 '+ask+' '+(cands.length>1?'<b>两现</b>（出现两次）':'只出现一次，没有歧义')+'：'
+    +cands.map(x=>POSN[x.i]+'爻 '+x.zhi+x.wx+(x.moving?'（动）':'')+(x.sy?'（'+x.sy+'）':'')).join('、')+'。');
+  P('按取用神的次序，'+r.why+'，所以主角定为 <b>'+POSN[y.i]+'爻 '+y.zhi+y.wx+'</b>。');
   cands.filter(x=>x.i!==y.i).forEach(x=>{
-    let n='另一爻 '+POSN[x.i]+'爻 '+x.zhi+x.wx+' 安静';
-    if(x.sy==='应') n+='，且是应爻，可当「外部条件」兼看';
-    else if(R[x.ws]>=4) n+='，本身不弱，可作参照';
+    let n='另一个 '+POSN[x.i]+'爻 '+x.zhi+x.wx+' 是安静的';
+    if(x.sy==='应') n+='，而且它正是应爻。虽然不当用神，但可以当「外部条件」来看——它反映你所处的环境';
+    else if(R[x.ws]>=4) n+='，本身不弱，可以做一个参照：同样的东西，在另一个位置上是什么状态';
     P(n+'。');
   });
+  P('用神临 <b>'+y.shen+'</b>——'+SHEN_DESC[y.shen]+'。所以这件事的性质里，带着这样一层味道。');
 
   // 二、旺衰
   sec('第二步：看旺衰');
-  let rel = y.wx===mWx?'与月建同气':(SHENG[mWx]===y.wx?'月建生它':(SHENG[y.wx]===mWx?'它生月建，泄气':(KE[y.wx]===mWx?'它克月建':(KE[mWx]===y.wx?'月建克它':''))));
-  P('月建 <b>'+mZhi+'（'+mWx+'）</b>，'+rel+' &rarr; 「<b>'+y.ws+'</b>」');
+  let rel = y.wx===mWx?'与月建同一个五行，属于「当令」':(SHENG[mWx]===y.wx?'月建生它':(SHENG[y.wx]===mWx?'它去生月建，力气被抽走':(KE[y.wx]===mWx?'它去克月建，等于跟当令的对着干':(KE[mWx]===y.wx?'月建克它':'无直接关系'))));
+  P('先看月建。<b>'+mZhi+'月</b>属'+mWx+'，用神属'+y.wx+'，'+rel+'，所以它在当月是「<b>'+y.ws+'</b>」。');
+  P('「'+y.ws+'」翻成白话：'+WS_PLAIN[y.ws]+'。');
   let dn;
-  if(dZhi===y.zhi) dn='用神临日辰 &rarr; 力量再加，是它最强的时候';
-  else if(LIUCHONG[dZhi]===y.zhi) dn='日辰冲用神 &rarr; 主冲动、易破散';
-  else if(LIUHE[dZhi]===y.zhi) dn='日辰合用神 &rarr; 主牵绊、事缓';
-  else dn='日辰不直接作用于用神';
-  P('日辰 <b>'+dZhi+'</b>，'+dn+'。');
+  if(dZhi===y.zhi) dn='用神临日辰——它正好站在今天的日子上，等于当天有加持，力量再加一层';
+  else if(LIUCHONG[dZhi]===y.zhi) dn='日辰与用神相冲——主冲动、易破散，事情容易被突然打断';
+  else if(LIUHE[dZhi]===y.zhi) dn='日辰与用神相合——主牵绊、事缓，想快也快不起来';
+  else dn='日辰与用神没有直接关系，这一项不加分也不减分';
+  P('再看日辰。<b>'+dZhi+'日</b>，'+dn+'。');
   const strong=R[y.ws]>=4;
-  P('结论：用神<b>'+(strong?'有力':'力弱')+'</b>'+(dZhi===y.zhi?'，且临日辰':'')+'。');
+  let concl;
+  if(strong&&dZhi===y.zhi) concl='用神既有月气、又临日辰，是它全卦最有力的时候——<b>条件不缺，底子是有的</b>';
+  else if(strong) concl='用神有力——<b>底子不错，事情本身立得住</b>';
+  else if(dZhi===y.zhi) concl='用神在月令里不旺，但临了日辰，<b>临时有劲，靠当下的势头撑着</b>';
+  else concl='用神力弱——<b>先天不足，硬推会很吃力</b>';
+  P('两样合起来：'+concl+'。');
 
   // 三、生克
   sec('第三步：看生克');
   const yuan=L.filter(x=>SHENG[x.wx]===y.wx);
   const ji=L.filter(x=>KE[x.wx]===y.wx);
-  P('<b>生它的（原神）</b>：'+(yuan.length?'':'不上卦——无援手。'));
+  P('<b>生它的，叫原神</b>（'+y.wx+'由谁来生）：'+(yuan.length?'':'<b>一个都没有，不上卦</b>。'));
+  if(!yuan.length) P('意味着没有任何东西在外面给它输血——<b>孤军，只能靠自己攒</b>。');
   yuan.forEach(x=>{
-    let t='· '+POSN[x.i]+'爻 '+x.qin+' '+x.zhi+x.wx+'：'+(x.moving?'动':'静')+'，'+x.ws;
-    if(x.moving&&x.rel) t+='；动化'+x.bZhi+x.bWx+'，'+REL_DESC[x.rel];
+    let t='· '+POSN[x.i]+'爻 '+x.qin+' '+x.zhi+x.wx+'（'+x.ws+'）：'+(x.moving?'在动':'安静');
+    if(x.moving&&x.rel) t+='，动化'+x.bZhi+x.bWx+'——'+REL_DESC[x.rel];
     P(t+'。');
+    if(x.moving&&x.rel==='回头克') P('　它自己都被变爻克住了，<b>想帮也帮不动</b>——这是"看着有救，其实没救"的典型。');
+    else if(x.moving) P('　它有动作，能主动来生用神，<b>这是加分项</b>。');
+    else P('　它在位但没动，<b>帮得上，但帮不猛</b>。');
   });
-  P('<b>克它的（忌神）</b>：'+(ji.length?'':'不上卦——无阻力。'));
+  P('<b>克它的，叫忌神</b>（谁来克'+y.wx+'）：'+(ji.length?'':'<b>一个都没有，不上卦</b>。'));
+  if(!ji.length) P('意味着没有明确的对立面——<b>麻烦不在外面，在你自己这边</b>。');
   ji.forEach(x=>{
-    let t='· '+POSN[x.i]+'爻 '+x.qin+' '+x.zhi+x.wx+'：'+(x.moving?'动':'静')+'，'+x.ws;
-    if(x.moving&&x.rel) t+='；动化'+x.bZhi+x.bWx+'，'+REL_DESC[x.rel];
+    let t='· '+POSN[x.i]+'爻 '+x.qin+' '+x.zhi+x.wx+'（'+x.ws+'）：'+(x.moving?'在动':'安静');
+    if(x.moving&&x.rel) t+='，动化'+x.bZhi+x.bWx+'——'+REL_DESC[x.rel];
     P(t+'。');
+    if(x.moving) P('　它是动的，<b>阻力会主动找上来，躲不掉</b>。');
+    else P('　它是静的，<b>阻力在位但不发动，暂时不碍事</b>。');
   });
   const ym=yuan.filter(x=>x.moving).length, jm=ji.filter(x=>x.moving).length;
-  let s='小结：'+(yuan.length?(ym?'原神发动，来生有力':'原神在位但安静，助而不显'):'无原神，孤军无援');
-  s+='；'+(ji.length?(jm?'忌神发动，阻力明显':'忌神安静，阻力不大'):'无忌神，无阻');
+  let s='小结：';
+  s+= yuan.length?(ym?'原神有动，来生有力':'原神在位但安静，助而不显'):'没有原神，孤军无援';
+  s+='；';
+  s+= ji.length?(jm?'忌神发动，阻力明显':'忌神安静，阻力不大'):'没有忌神，无阻力';
   P(s+'。');
 
   // 四、变卦
   sec('第四步：看变卦');
   if(y.moving){
-    P('用神动，翻转后化出 <b>'+y.bZhi+y.bWx+'</b>（'+y.bQin+'）：'+REL_DESC[y.rel]+'。');
-    if(y.rel==='回头克') P('这是全卦最关键的一笔——用神被自己变出来的东西克住，主事情反复、做到一半被自己打回来。');
-    else if(y.rel==='回头生') P('变爻回头生用神，主后劲转强、有人补位。');
-    else if(y.rel==='化泄') P('用神去生变爻，力气往外漏——不是被打断，是自己漏气。');
-    else if(y.rel==='化耗') P('用神去克变爻，克出耗力——越用力越亏。');
+    P('用神在动——它会翻面，变成另一个五行，这就叫「动化」。它化出 <b>'+y.bZhi+y.bWx+'</b>（'+y.bQin+'）。');
+    P('两者关系：'+REL_DESC[y.rel]+'。');
+    if(y.rel==='回头克') P('这是全卦最关键的一笔。<b>用神被自己变出来的东西克住</b>——不是外面有人拦你，是事情做到一半，自己把自己拉了回来。主反复、主动摇。');
+    else if(y.rel==='回头生') P('变爻回头生用神，<b>后劲是有的</b>，越往后越顺，主有人补位或条件好转。');
+    else if(y.rel==='化泄') P('用神去生变爻，<b>力气往外漏</b>——不是被打断，是做完了留不下，像漏水。');
+    else if(y.rel==='化耗') P('用神去克变爻，<b>克出耗力</b>——方向没错，但越使劲越亏，事倍功半。');
   } else {
-    P('用神安静不动，没有变爻，事情暂不转向，以本卦为主。');
+    P('用神安静不动，没有变爻。<b>事情暂时不转向</b>，以本卦为主，现状就是接下来一段时间的样子。');
   }
-  P('本卦 <b>'+benName+'</b> 是现状，变卦 <b>'+bianName+'</b> 是去向。');
+  const movCount=L.filter(x=>x.moving).length;
+  P('本卦 <b>'+benName+'</b> 说的是现在的局面，变卦 <b>'+bianName+'</b> 说的是它往哪走。'
+    +'这一卦共有 <b>'+movCount+'</b> 个动爻——'+(movCount===0?'全静，局面稳定，短期内不会有大的转折':(movCount>=3?'动得多，说明变数大、事情还在剧烈变动中':'动静适中，有变化但不激烈'))+'。');
 
-  // 世应
-  sec('世应');
-  const shi=L[p.shi-1], ying=L[(p.shi>3?p.shi-3:p.shi+3)-1];
-  P('世爻 <b>'+POSN[shi.i]+'爻 '+shi.qin+' '+shi.zhi+shi.wx+'</b>（'+shi.ws+'，'+shi.shen+'）——你自己。');
-  P('应爻 <b>'+POSN[ying.i]+'爻 '+ying.qin+' '+ying.zhi+ying.wx+'</b>（'+ying.ws+'）——对方／外部环境。');
+  // 五、世应
+  sec('世应：你和这件事的关系');
+  P('世爻 <b>'+POSN[shi.i]+'爻 '+shi.qin+' '+shi.zhi+shi.wx+'</b>（'+shi.ws+'，临'+shi.shen+'）——这是你自己在这个卦里的位置。');
+  if(shi.qin!==ask){
+    if(KE[shi.wx]===y.wx) P('注意：世爻的五行<b>正好克用神</b>。这是好事也是坏事——好在你想要它、会主动去抓；坏在"克"是要花力气的，世爻自己只有「'+shi.ws+'」，<b>想抓，但抓得吃力</b>。');
+    else if(SHENG[shi.wx]===y.wx) P('世爻去生用神——<b>你在为这件事付出</b>，出力的是你。');
+    else if(SHENG[y.wx]===shi.wx) P('用神来生世爻——<b>这件事反过来滋养你</b>，是顺的。');
+    else if(KE[y.wx]===shi.wx) P('用神反过来克世爻——<b>这件事给你压力</b>，小心被它牵着走。');
+  } else {
+    P('世爻本身就是用神——<b>你和所问之事合为一体</b>，成败全系于你自己，没有"外力替你办"这回事。');
+  }
+  if(shi.moving&&shi.rel) P('世爻在动，化出 '+shi.bZhi+shi.bWx+'（'+shi.bQin+'）——'+REL_DESC[shi.rel]+'。');
+  P('应爻 <b>'+POSN[ying.i]+'爻 '+ying.qin+' '+ying.zhi+ying.wx+'</b>（'+ying.ws+'）——对方，或外部环境、外部条件。');
   let sr;
-  if(shi.wx===ying.wx) sr='同五行，比和';
-  else if(SHENG[shi.wx]===ying.wx) sr='世生应——你在付出、主动';
-  else if(SHENG[ying.wx]===shi.wx) sr='应生世——对方助你';
-  else if(KE[shi.wx]===ying.wx) sr='世克应——你想掌控';
-  else sr='应克世——受对方压制';
+  if(shi.wx===ying.wx) sr='同五行，比和——势均力敌，谁也不压谁';
+  else if(SHENG[shi.wx]===ying.wx) sr='世生应——你在付出、在主动，对方是接受的一方';
+  else if(SHENG[ying.wx]===shi.wx) sr='应生世——对方或环境在帮你，是顺的';
+  else if(KE[shi.wx]===ying.wx) sr='世克应——你想掌控局面';
+  else sr='应克世——你受对方或环境的压制';
   P('世应关系：<b>'+sr+'</b>。');
-  if(shi.qin===ask) P('世爻本身就是用神——成败系于你自己。');
-  else if(SHENG[shi.wx]===y.wx) P('世生用神——你在为这件事付出。');
-  else if(KE[shi.wx]===y.wx) P('世克用神——你想抓住它；世'+shi.ws+'、用神'+y.ws+'，'+(R[shi.ws]<R[y.ws]?'抓起来吃力':'抓得住')+'。');
+  if(KE[shi.wx]===ying.wx && R[shi.ws]<R[ying.ws])
+    P('但要注意：世爻「'+shi.ws+'」、应爻「'+ying.ws+'」，<b>你弱它强，克是克不动的</b>——想掌控，实际掌控不了，只会觉得累。');
+  else if(SHENG[ying.wx]===shi.wx && R[ying.ws]>=4)
+    P('应爻有力又来生世，<b>外部条件是真能借上的</b>，别硬扛，去用它们。');
 
-  // 综合
+  // 六、关键
+  sec('这个盘最关键的几点');
+  const keys=[];
+  keys.push((strong?'用神有力':'用神力弱')+'——'+(strong?'事情本身立得住，底子在':'条件不到位，先补条件再谈推进'));
+  if(y.rel==='回头克') keys.push('用神化回头克——最大的问题是"回撤"，不是做不成，是做到一半被自己拉回来');
+  else if(y.rel==='化泄') keys.push('用神化泄——做的时候投入，做完留不下，力气往外漏');
+  else if(y.rel==='化耗') keys.push('用神化耗——方向对，但越使劲越亏');
+  if(!yuan.length) keys.push('原神不上卦——没有外力来帮，只能靠自己攒');
+  if(jm) keys.push('忌神发动——阻力是主动的，会自己找上门');
+  if(KE[shi.wx]===y.wx && R[shi.ws]<R[y.ws]) keys.push('世克用神而世弱——你想抓，但力气不够');
+  if(dZhi===y.zhi) keys.push('用神临日辰——眼下正是状态最好的时候，别浪费');
+  keys.slice(0,3).forEach((k,i)=>P('<b>'+(i+1)+'.</b> '+k+'。'));
+
+  // 七、综合
   sec('综合断语');
   let g=0,b=0;
   if(strong) g++; else b++;
@@ -757,26 +809,28 @@ function buildReport(L,p,ask,mZhi,mWx,dZhi,benName,bianName){
   if(jm) b++; else if(ji.length===0) g++;
   const d=g-b;
   const lvl = d>=2?'偏吉':(d<=-2?'偏凶':'中性、需观察');
-  P('倾向：<b>'+lvl+'</b>（有利 '+g+' 项，不利 '+b+' 项；差 ≥2 判偏吉，≤ −2 判偏凶，其余中性）。');
+  P('倾向：<b>'+lvl+'</b>（有利 '+g+' 项，不利 '+b+' 项——用神旺衰、变卦关系、原神、忌神四项各自计分；差 ≥2 判偏吉，≤ −2 判偏凶，其余算中性）。');
   const pts=[];
-  pts.push(strong?'学问也好、事情本身也好，底子是有的':'底子偏弱，条件还没到位');
-  if(y.rel==='回头克') pts.push('最大的问题是「回撤」——不是做不成，是做到一半被自己拉回来');
-  if(y.rel==='化泄') pts.push('力气容易外漏：做的时候很投入，做完留不下东西');
-  if(y.rel==='化耗') pts.push('方向对但费力，越使劲越亏');
-  if(!yuan.length) pts.push('没有外力来帮，只能靠自己攒');
-  if(jm) pts.push('阻力是"动"的，会主动找上来，躲不掉');
-  if(!ji.length) pts.push('没有明显的对手或阻碍，主要是自己的问题');
+  pts.push(strong?'事情本身是有底子的，不是"根本没戏"那一种':'底子偏弱，现在更像是在硬撑');
+  if(y.rel==='回头克') pts.push('卡你的不是难度，是「回撤」——做到一半被自己拉回来，所以看起来一直在原地');
+  if(y.rel==='化泄') pts.push('力气容易外漏：做的时候很投入，做完留不下东西，所以要"留痕"');
+  if(y.rel==='化耗') pts.push('方向对但费力，越使劲越亏，所以要"减量"而不是"加码"');
+  if(!yuan.length) pts.push('没有外力来帮，指望别人搭把手不现实');
+  if(!ji.length) pts.push('没有明显的对手或阻碍，主要矛盾在自己身上');
+  if(jm) pts.push('阻力是"动"的，会主动找上门，得提前设防');
   pts.forEach(t=>P('· '+t+'。'));
 
-  // 建议
+  // 八、建议
   sec('可以怎么做');
   const tips=[];
-  if(!strong || y.rel==='化泄' || y.rel==='化耗') tips.push('减小单次强度、拉长时间——一次做小，天天做');
-  if(y.rel==='回头克') tips.push('给「回撤」设防：做完立刻留痕（笔记、复述、马上用一次），别指望下次还记得');
-  if(jm) tips.push('先处理阻力源，而不是加力硬顶');
-  if(R[ying.ws]>=4 && R[shi.ws]<4) tips.push('借外部力量：资料、环境、懂的人——比自己硬撑有效');
-  if(strong && ym) tips.push('趁势推进，这段时间是效率最高的时候');
-  if(!tips.length) tips.push('按既定节奏做，不急于求成');
+  if(!strong || y.rel==='化泄' || y.rel==='化耗') tips.push('减小单次强度、拉长时间——<b>因为</b>用神本来就不旺，一次做太重只会耗光；一次做小、天天做，反而攒得住');
+  if(y.rel==='回头克') tips.push('给「回撤」设防——<b>因为</b>回头克来自你自己的变爻，说明"拉回来"的力量是你自己产生的，靠意志顶不住，得靠流程：做完立刻留痕（写下来、复述一遍、马上用一次）');
+  if(y.rel==='化泄') tips.push('把"学"改成"产出"——<b>因为</b>化泄是力气往外流，只有立刻转化成看得见的东西（笔记、例子、能讲给别人听的版本）才留得住');
+  if(jm) tips.push('先处理阻力源，而不是加力硬顶——<b>因为</b>忌神是动的，它会自己找上来，正面顶只会两败');
+  if(R[ying.ws]>=4 && R[shi.ws]<4) tips.push('借外部力量——<b>因为</b>应爻比你旺，说明外部条件（资料、环境、懂的人）比你自己硬撑更有效');
+  if(strong && ym) tips.push('趁势推进——<b>因为</b>用神有力、原神又在动，这段时间的效率是最高的');
+  if(dZhi===y.zhi) tips.push('就今天动手——<b>因为</b>用神临日辰，眼下是它最强的时候，过了这几天势头会落');
+  if(!tips.length) tips.push('按既定节奏走，不急于求成——卦象没有明显的助力也没有明显的阻力，靠的是持续');
   tips.slice(0,3).forEach(t=>P('· '+t+'。'));
   return o.join('');
 }
